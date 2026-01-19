@@ -3,58 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pixel Battle Royale</title>
+    <title>Map Walk Sync</title>
     <style>
-        :root { --bg: #0f172a; --p1: #ef4444; --p2: #3b82f6; }
-        * { box-sizing: border-box; touch-action: manipulation; }
-        body { 
-            background: var(--bg); color: white; font-family: sans-serif; 
-            margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; 
+        :root { --bg: #0f172a; --accent: #3b82f6; }
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; }
+        
+        #setup { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; }
+        input { padding: 15px; border-radius: 12px; border: 1px solid #334155; background: #1e293b; color: white; width: 250px; text-align: center; font-size: 18px; }
+        button { padding: 15px 30px; border-radius: 12px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; }
+
+        #main-ui { display: none; width: 100%; height: 100%; flex-direction: column; }
+        iframe { flex: 1; border: none; width: 100%; }
+
+        /* Чат поверх карты */
+        #chat-layer { 
+            position: absolute; bottom: 80px; left: 10px; right: 10px; 
+            max-height: 200px; overflow-y: auto; pointer-events: none; 
+            display: flex; flex-direction: column; gap: 5px;
+        }
+        .msg { 
+            background: rgba(15, 23, 42, 0.8); padding: 5px 12px; border-radius: 10px; 
+            font-size: 13px; align-self: flex-start; backdrop-filter: blur(5px);
         }
 
-        /* Экран входа */
-        #setup { display: flex; flex-direction: column; gap: 15px; margin-top: 50px; width: 80%; max-width: 300px; }
-        input { padding: 15px; border-radius: 10px; border: none; text-align: center; font-size: 20px; }
-        button { padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; background: #10b981; color: white; }
-
-        /* Игровое поле */
-        #game-ui { display: none; width: 100%; max-width: 400px; text-align: center; }
-        .grid { 
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; 
-            background: #1e293b; padding: 10px; border-radius: 15px; margin: 20px;
+        .controls { 
+            background: #1e293b; padding: 15px; display: flex; gap: 10px; 
+            border-top: 1px solid #334155; align-items: center; 
         }
-        .cell { aspect-ratio: 1/1; background: #334155; border-radius: 8px; transition: 0.2s; }
-        .cell.p1 { background: var(--p1); box-shadow: 0 0 15px var(--p1); }
-        .cell.p2 { background: var(--p2); box-shadow: 0 0 15px var(--p2); }
-
-        .stats { display: flex; justify-content: space-around; font-size: 20px; font-weight: bold; margin-bottom: 10px; }
-        .id-badge { background: #334155; padding: 5px 15px; border-radius: 20px; font-size: 12px; margin-bottom: 20px; }
+        #place-input { flex: 1; padding: 10px; border-radius: 8px; border: none; }
     </style>
 </head>
 <body>
 
     <div id="setup">
-        <h1 style="text-align: center;">BOX BATTLE</h1>
-        <button onclick="createGame()">СОЗДАТЬ ИГРУ</button>
-        <div style="text-align: center; color: #64748b;">— ИЛИ —</div>
-        <input type="number" id="join-id" placeholder="ID КОДА (4 цифры)">
-        <button onclick="joinGame()" style="background: #3b82f6;">ВОЙТИ</button>
+        <h1>MAP WALKER</h1>
+        <button onclick="createRoom()">СОЗДАТЬ КОМНАТУ</button>
+        <div style="color: #64748b;">— или —</div>
+        <input type="number" id="room-id-input" placeholder="ID (4 ЦИФРЫ)">
+        <button onclick="joinRoom()" style="background: #10b981; width: 250px;">ВОЙТИ</button>
     </div>
 
-    <div id="game-ui">
-        <div class="id-badge">ID КОМНАТЫ: <span id="display-id">0000</span></div>
-        <div class="stats">
-            <span style="color: var(--p1)">RED: <span id="s1">0</span></span>
-            <span style="color: var(--p2)">BLUE: <span id="s2">0</span></span>
+    <div id="main-ui">
+        <iframe id="map-frame" src=""></iframe>
+        
+        <div id="chat-layer"></div>
+
+        <div class="controls">
+            <input type="text" id="place-input" placeholder="Куда летим? (напр. Париж)">
+            <button onclick="updateLocation()">GO</button>
         </div>
-        <div class="grid" id="grid"></div>
-        <p id="turn-info">Твой цвет: загрузка...</p>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // ТВОЙ КОНФИГ
     const firebaseConfig = {
         apiKey: "AIzaSyDOmPzdDi6n6vICcDMoAytqVQ9nr9ZLERQ",
         authDomain: "notes-f9e8b.firebaseapp.com",
@@ -65,84 +69,78 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    let myRole = ''; // 'p1' или 'p2'
-    let gameId = '';
+    let roomId = '';
+    const mapFrame = document.getElementById('map-frame');
+    const chatLayer = document.getElementById('chat-layer');
 
-    // 1. Создание игры (Короткий ID)
-    window.createGame = () => {
-        gameId = Math.floor(1000 + Math.random() * 9000).toString();
-        myRole = 'p1';
-        
-        const initialData = {
-            cells: {},
-            p1_score: 0,
-            p2_score: 0,
-            active: true
-        };
-        
-        set(ref(db, `games/${gameId}`), initialData).then(() => {
-            startGameUI();
-        });
+    // 1. Создание комнаты
+    window.createRoom = () => {
+        roomId = Math.floor(1000 + Math.random() * 9000).toString();
+        set(ref(db, `map_rooms/${roomId}/state`), {
+            place: "Moscow",
+            time: Date.now()
+        }).then(() => startApp());
     };
 
-    // 2. Вход в игру
-    window.joinGame = () => {
-        gameId = document.getElementById('join-id').value;
-        if (gameId.length !== 4) return alert("Введите 4 цифры");
-        myRole = 'p2';
-        startGameUI();
+    // 2. Вход
+    window.joinRoom = () => {
+        roomId = document.getElementById('room-id-input').value;
+        if(roomId.length !== 4) return alert("Введите 4 цифры");
+        startApp();
     };
 
-    function startGameUI() {
+    function startApp() {
         document.getElementById('setup').style.display = 'none';
-        document.getElementById('game-ui').style.display = 'block';
-        document.getElementById('display-id').innerText = gameId;
-        document.getElementById('turn-info').innerText = myRole === 'p1' ? "Ты: КРАСНЫЙ (Ходи!)" : "Ты: СИНИЙ (Ходи!)";
+        document.getElementById('main-ui').style.display = 'flex';
         
-        createGrid();
-        listenToGame();
-    }
-
-    function createGrid() {
-        const gridEl = document.getElementById('grid');
-        for (let i = 0; i < 25; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.id = `cell-${i}`;
-            cell.onclick = () => claimCell(i);
-            gridEl.appendChild(cell);
-        }
-    }
-
-    // 3. Логика хода
-    window.claimCell = (index) => {
-        // Просто обновляем цвет в базе
-        set(ref(db, `games/${gameId}/cells/${index}`), myRole);
-    };
-
-    // 4. Синхронизация
-    function listenToGame() {
-        onValue(ref(db, `games/${gameId}`), (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
-
-            let s1 = 0, s2 = 0;
-            
-            // Обновляем клетки
-            for (let i = 0; i < 25; i++) {
-                const cellEl = document.getElementById(`cell-${i}`);
-                if (data.cells && data.cells[i]) {
-                    const owner = data.cells[i];
-                    cellEl.className = `cell ${owner}`;
-                    if (owner === 'p1') s1++; else s2++;
-                }
+        // Следим за картой
+        onValue(ref(db, `map_rooms/${roomId}/state`), (snap) => {
+            const data = snap.val();
+            if(data) {
+                const url = `https://www.google.com/maps?q=${encodeURIComponent(data.place)}&output=embed`;
+                mapFrame.src = url;
             }
+        });
 
-            // Обновляем счет
-            document.getElementById('s1').innerText = s1;
-            document.getElementById('s2').innerText = s2;
+        // Следим за чатом
+        onChildAdded(ref(db, `map_rooms/${roomId}/chat`), (snap) => {
+            const m = snap.val();
+            const div = document.createElement('div');
+            div.className = 'msg';
+            div.innerText = m;
+            chatLayer.appendChild(div);
+            chatLayer.scrollTop = chatLayer.scrollHeight;
         });
     }
+
+    // 3. Обновление локации и отправка сообщения
+    window.updateLocation = () => {
+        const place = document.getElementById('place-input').value.trim();
+        if(!place) return;
+
+        // Меняем карту для всех
+        set(ref(db, `map_rooms/${roomId}/state`), {
+            place: place,
+            time: Date.now()
+        });
+
+        // Пишем в чат сообщение о перемещении
+        push(ref(db, `map_rooms/${roomId}/chat`), `🚀 Летим в: ${place}`);
+        document.getElementById('place-input').value = '';
+    };
+
+    // Чтобы можно было просто переписываться (нажать Enter)
+    document.getElementById('place-input').onkeypress = (e) => {
+        if(e.key === 'Enter') {
+            const txt = e.target.value.trim();
+            if(txt.startsWith('!')) { // Если начать с !, то просто сообщение
+                push(ref(db, `map_rooms/${roomId}/chat`), `💬 ${txt.substring(1)}`);
+                e.target.value = '';
+            } else {
+                updateLocation();
+            }
+        }
+    };
 </script>
 </body>
 </html>
