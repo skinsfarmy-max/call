@@ -2,58 +2,58 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudVideo P2P</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CloudTalk Mobile</title>
     <style>
-        :root { --bg: #0b0e14; --panel: #1e293b; --accent: #3b82f6; --error: #ef4444; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
+        :root { --bg: #0f172a; --card: #1e293b; --accent: #10b981; --btn-join: #3b82f6; --error: #ef4444; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: white; font-family: -apple-system, system-ui, sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+
+        .app-container { width: 90%; max-width: 400px; background: var(--card); padding: 30px; border-radius: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); text-align: center; }
         
-        /* Видео сетка */
-        .video-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; height: 70vh; padding: 20px; background: #000; }
-        video { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; background: #222; transform: scaleX(-1); }
-        
-        /* Интерфейс управления */
-        .controls { height: 30vh; background: var(--panel); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; border-top: 2px solid #334155; }
-        .btn-group { display: flex; gap: 10px; }
-        
-        button { padding: 12px 25px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-main { background: var(--accent); color: white; }
-        .btn-danger { background: var(--error); color: white; }
-        
-        input { background: #0b0e14; border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; text-align: center; width: 250px; font-family: monospace; }
-        .status-tag { font-size: 14px; color: #94a3b8; }
+        .avatar-area { width: 100px; height: 100px; background: #334155; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 3px solid var(--accent); }
+        .calling .avatar-area { animation: pulse 1.5s infinite; }
+
+        h2 { margin: 10px 0; font-size: 24px; }
+        #status { color: #94a3b8; margin-bottom: 25px; font-size: 14px; }
+
+        .input-group { margin-bottom: 20px; }
+        input { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid #334155; background: #0f172a; color: white; font-size: 18px; text-align: center; outline: none; }
+        input:focus { border-color: var(--accent); }
+
+        button { width: 100%; padding: 18px; border-radius: 18px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 12px; }
+        .btn-start { background: var(--accent); color: white; }
+        .btn-join { background: var(--btn-join); color: white; }
+        .btn-hangup { background: var(--error); color: white; display: none; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
     </style>
 </head>
 <body>
 
-<div class="video-container">
-    <div>
-        <div style="text-align: center; font-size: 12px; color: #555;">ВЫ</div>
-        <video id="localVideo" autoplay playsinline muted></video>
-    </div>
-    <div>
-        <div style="text-align: center; font-size: 12px; color: #555;">СОБЕСЕДНИК</div>
-        <video id="remoteVideo" autoplay playsinline></video>
-    </div>
-</div>
+<div class="app-container" id="app">
+    <div class="avatar-area">🎙️</div>
+    <h2 id="title">CloudTalk</h2>
+    <div id="status">Готов к подключению</div>
 
-<div class="controls">
-    <div id="status" class="status-tag">Ожидание действий...</div>
-    
-    <div class="btn-group">
-        <button class="btn-main" id="createBtn">СОЗДАТЬ КОМНАТУ</button>
-        <input type="text" id="roomInput" placeholder="Введите ID комнаты">
-        <button class="btn-main" style="background: #10b981;" id="joinBtn">ВОЙТИ</button>
+    <div class="input-group">
+        <input type="text" id="roomID" placeholder="ID КОМНАТЫ">
     </div>
 
-    <div class="btn-group">
-        <button class="btn-danger" onclick="location.reload()">ЗАВЕРШИТЬ ЗВОНОК</button>
-    </div>
+    <button class="btn-start" id="btn-create">СОЗДАТЬ ЗВОНОК</button>
+    <button class="btn-join" id="btn-connect">ПРИСОЕДИНИТЬСЯ</button>
+    <button class="btn-hangup" id="btn-end">ЗАВЕРШИТЬ</button>
+
+    <audio id="audio-out" autoplay></audio>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, push, update, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, push, onValue, update, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDOmPzdDi6n6vICcDMoAytqVQ9nr9ZLERQ",
@@ -65,84 +65,82 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const servers = {
-        iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }],
-        iceCandidatePoolSize: 10,
-    };
+    const pc = new RTCPeerConnection({
+        iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }]
+    });
 
-    let pc = new RTCPeerConnection(servers);
     let localStream = null;
-    let remoteStream = null;
+    const roomInput = document.getElementById('roomID');
+    const statusText = document.getElementById('status');
+    const appContainer = document.getElementById('app');
 
-    const localVideo = document.getElementById('localVideo');
-    const remoteVideo = document.getElementById('remoteVideo');
-    const roomInput = document.getElementById('roomInput');
-    const status = document.getElementById('status');
-
-    // Настройка медиа
-    async function setupMedia() {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        remoteStream = new MediaStream();
-
+    // Настройка звука
+    async function startAudio() {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-        pc.ontrack = event => event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
-        
-        localVideo.srcObject = localStream;
-        remoteVideo.srcObject = remoteStream;
+        appContainer.classList.add('calling');
     }
 
-    // 1. СОЗДАТЬ ЗВОНОК
-    document.getElementById('createBtn').onclick = async () => {
-        await setupMedia();
+    // Прием звука от собеседника
+    pc.ontrack = (event) => {
+        document.getElementById('audio-out').srcObject = event.streams[0];
+    };
+
+    // --- СОЗДАНИЕ ЗВОНКА ---
+    document.getElementById('btn-create').onclick = async () => {
         const callRef = push(ref(db, 'calls'));
         const callId = callRef.key;
         roomInput.value = callId;
-        status.innerText = "Комната создана. Передайте ID другу.";
+        statusText.innerText = "Передай ID другу";
+        
+        await startAudio();
 
-        pc.onicecandidate = event => {
-            if (event.candidate) push(ref(db, `calls/${callId}/callerCandidates`), event.candidate.toJSON());
-        };
+        pc.onicecandidate = e => e.candidate && push(ref(db, `calls/${callId}/callerCandidates`), e.candidate.toJSON());
 
-        const offerDescription = await pc.createOffer();
-        await pc.setLocalDescription(offerDescription);
-        await set(ref(db, `calls/${callId}/offer`), { sdp: offerDescription.sdp, type: offerDescription.type });
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await set(ref(db, `calls/${callId}/offer`), { sdp: offer.sdp, type: offer.type });
 
-        onValue(ref(db, `calls/${callId}/answer`), async snapshot => {
-            const data = snapshot.val();
-            if (!pc.currentRemoteDescription && data) {
-                await pc.setRemoteDescription(new RTCSessionDescription(data));
-                status.innerText = "Собеседник подключился!";
+        onValue(ref(db, `calls/${callId}/answer`), async snap => {
+            if (!pc.currentRemoteDescription && snap.exists()) {
+                await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+                statusText.innerText = "На связи";
             }
         });
 
-        onChildAdded(ref(db, `calls/${callId}/calleeCandidates`), snap => {
-            pc.addIceCandidate(new RTCIceCandidate(snap.val()));
-        });
+        onChildAdded(ref(db, `calls/${callId}/calleeCandidates`), snap => pc.addIceCandidate(new RTCIceCandidate(snap.val())));
+        uiOnCall();
     };
 
-    // 2. ВОЙТИ В ЗВОНОК
-    document.getElementById('joinBtn').onclick = async () => {
+    // --- ПОДКЛЮЧЕНИЕ ---
+    document.getElementById('btn-connect').onclick = async () => {
         const callId = roomInput.value;
-        if (!callId) return alert("Введите ID комнаты!");
-        await setupMedia();
+        if (!callId) return alert("Вставь ID!");
+        
+        await startAudio();
 
-        pc.onicecandidate = event => {
-            if (event.candidate) push(ref(db, `calls/${callId}/calleeCandidates`), event.candidate.toJSON());
-        };
+        pc.onicecandidate = e => e.candidate && push(ref(db, `calls/${callId}/calleeCandidates`), e.candidate.toJSON());
 
-        const callSnap = await (await fetch(`${firebaseConfig.databaseURL}/calls/${callId}/offer.json`)).json();
-        await pc.setRemoteDescription(new RTCSessionDescription(callSnap));
+        // Получаем оффер через fetch (быстрее для разового получения)
+        const snap = await (await fetch(`${firebaseConfig.databaseURL}/calls/${callId}/offer.json`)).json();
+        await pc.setRemoteDescription(new RTCSessionDescription(snap));
 
-        const answerDescription = await pc.createAnswer();
-        await pc.setLocalDescription(answerDescription);
-        await update(ref(db, `calls/${callId}`), { answer: { sdp: answerDescription.sdp, type: answerDescription.type } });
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await update(ref(db, `calls/${callId}`), { answer: { sdp: answer.sdp, type: answer.type } });
 
-        onChildAdded(ref(db, `calls/${callId}/callerCandidates`), snap => {
-            pc.addIceCandidate(new RTCIceCandidate(snap.val()));
-        });
-
-        status.innerText = "Вы подключились к звонку.";
+        onChildAdded(ref(db, `calls/${callId}/callerCandidates`), snap => pc.addIceCandidate(new RTCIceCandidate(snap.val())));
+        statusText.innerText = "На связи";
+        uiOnCall();
     };
+
+    function uiOnCall() {
+        document.getElementById('btn-create').style.display = 'none';
+        document.getElementById('btn-connect').style.display = 'none';
+        document.getElementById('btn-end').style.display = 'block';
+    }
+
+    document.getElementById('btn-end').onclick = () => location.reload();
 </script>
 </body>
 </html>
