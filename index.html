@@ -3,217 +3,97 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Альфа-Школа</title>
+    <title>Альфа-Онлайн | Личный кабинет</title>
     <style>
-        :root {
-            --alfa-red: #ef3124;
-            --alfa-black: #030306;
-            --alfa-gray: #f2f3f5;
-            --alfa-text-secondary: #0404138c;
-        }
+        :root { --red: #ef3124; --bg: #f2f3f5; --white: #ffffff; --text: #030306; --gray: #898991; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; overflow-x: hidden; }
+        
+        /* Авторизация */
+        #auth-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--white); }
+        .logo { font-size: 42px; font-weight: 900; color: var(--red); letter-spacing: -2px; margin-bottom: 30px; }
+        .btn-red { background: var(--red); color: white; border: none; padding: 16px 32px; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 16px; }
 
-        body {
-            margin: 0;
-            background-color: var(--alfa-gray);
-            color: var(--alfa-black);
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
+        /* Кабинет */
+        #app { display: none; }
+        .header { background: var(--white); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #e2e3e5; }
+        .user-block { display: flex; align-items: center; gap: 10px; }
+        .user-block img { width: 36px; height: 36px; border-radius: 50%; }
 
-        /* Экран входа */
-        #login-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background: #fff;
-        }
+        .container { padding: 16px; max-width: 500px; margin: 0 auto; }
+        
+        .card { background: var(--white); border-radius: 24px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .card-label { font-size: 13px; color: var(--gray); margin-bottom: 5px; }
+        .balance { font-size: 32px; font-weight: 700; }
+        .uid-tag { font-size: 10px; color: var(--gray); margin-top: 15px; font-family: monospace; cursor: pointer; }
 
-        .alfa-logo {
-            color: var(--alfa-red);
-            font-size: 40px;
-            font-weight: 900;
-            margin-bottom: 40px;
-            letter-spacing: -2px;
-        }
+        .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .act-btn { background: var(--white); border-radius: 18px; padding: 12px; text-align: center; cursor: pointer; text-decoration: none; color: var(--text); }
+        .act-btn i { display: block; font-size: 24px; margin-bottom: 5px; }
+        .act-btn span { font-size: 12px; font-weight: 500; }
 
-        /* Главный экран */
-        #main-ui { display: none; }
+        .history-title { font-weight: 700; margin: 20px 0 10px 5px; }
+        .t-item { background: var(--white); padding: 15px; border-radius: 18px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .t-info div { font-size: 14px; font-weight: 600; }
+        .t-info span { font-size: 11px; color: var(--gray); }
+        .t-amount { font-weight: 700; }
+        .plus { color: #27ae60; }
+        .minus { color: var(--text); }
 
-        .header {
-            background: #fff;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #eee;
-        }
-
-        .container {
-            padding: 16px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* Карточка счета (как в Альфе) */
-        .account-card {
-            background: #fff;
-            border-radius: 24px;
-            padding: 20px;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-
-        .account-label {
-            font-size: 14px;
-            color: var(--alfa-text-secondary);
-            margin-bottom: 8px;
-        }
-
-        .balance-row {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .currency { color: var(--alfa-text-secondary); font-weight: 400; }
-
-        /* Плитки действий */
-        .actions-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        .action-tile {
-            background: #fff;
-            border-radius: 20px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-
-        .action-tile:active { transform: scale(0.97); }
-
-        .icon-box {
-            width: 32px;
-            height: 32px;
-            background: var(--alfa-gray);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Глобальный инфляционный блок */
-        .system-banner {
-            background: var(--alfa-red);
-            color: #fff;
-            border-radius: 20px;
-            padding: 16px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        button.main-btn {
-            background: var(--alfa-red);
-            color: #fff;
-            border: none;
-            padding: 16px;
-            border-radius: 16px;
-            width: 100%;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        .input-alfa {
-            width: 100%;
-            padding: 14px;
-            background: var(--alfa-gray);
-            border: none;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
+        /* Модалка перевода */
+        #transfer-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; }
+        .modal-content { background: var(--white); width: 100%; border-radius: 24px 24px 0 0; padding: 25px; box-sizing: border-box; }
+        input { width: 100%; padding: 16px; background: var(--bg); border: none; border-radius: 12px; margin-bottom: 12px; font-size: 16px; outline: none; }
     </style>
 </head>
 <body>
 
-<div id="login-screen">
-    <div class="alfa-logo">A-Eco</div>
-    <button onclick="login()" style="background:var(--alfa-red); color:white; border:none; padding:15px 30px; border-radius:12px; font-weight:bold; cursor:pointer;">
-        Войти через Google
-    </button>
+<div id="auth-screen">
+    <div class="logo">А-Банк</div>
+    <button class="btn-red" onclick="login()">Войти по Google ID</button>
 </div>
 
-<div id="main-ui">
+<div id="app">
     <div class="header">
-        <img id="u-pic" class="avatar" src="">
-        <div>
-            <div style="font-size: 12px; color: var(--alfa-text-secondary);">Добрый день,</div>
-            <div id="u-name" style="font-weight: 600;">Пользователь</div>
+        <div class="user-block">
+            <img id="u-img" src="">
+            <b id="u-name">...</b>
         </div>
-        <button onclick="location.reload()" style="margin-left: auto; background: none; border: none; color: var(--alfa-red);">Выйти</button>
+        <button onclick="location.reload()" style="background:none; border:none; color:var(--red); font-weight:600;">Выйти</button>
     </div>
 
     <div class="container">
-        <div class="system-banner">
-            <div>
-                <div style="font-size: 12px; opacity: 0.8;">Доступно для выплаты:</div>
-                <div id="pool" style="font-size: 20px; font-weight: bold;">0.00 $</div>
-            </div>
-            <button onclick="loot()" style="background: #fff; color: var(--alfa-red); border: none; padding: 8px 16px; border-radius: 10px; font-weight: bold;">Лутать</button>
+        <div class="card">
+            <div class="card-label">Текущий счет</div>
+            <div class="balance"><span id="u-bal">0.00</span> <span>₽</span></div>
+            <div class="uid-tag" id="u-uid" onclick="copyId()">ID: копирование...</div>
         </div>
 
-        <div class="account-card">
-            <div class="account-label">Текущий счет · School Pay</div>
-            <div class="balance-row"><span id="balance">0.00</span> <span class="currency">$</span></div>
-            <div id="u-uid" style="font-size: 10px; color: var(--alfa-text-secondary); margin-top: 10px;">ID: ...</div>
+        <div class="actions">
+            <div class="act-btn" onclick="showModal()"><i>💸</i><span>Перевод</span></div>
+            <div class="act-btn"><i>💳</i><span>Карты</span></div>
+            <div class="act-btn"><i>📉</i><span>Биржа</span></div>
         </div>
 
-        <div class="actions-grid">
-            <div class="action-tile" onclick="openTransfer()">
-                <div class="icon-box">💸</div>
-                <div style="font-weight: 600; font-size: 14px;">Перевод</div>
+        <div class="history-title">История операций</div>
+        <div id="history-list">
             </div>
-            <div class="action-tile">
-                <div class="icon-box">📊</div>
-                <div style="font-weight: 600; font-size: 14px;">История</div>
-            </div>
-        </div>
+    </div>
+</div>
 
-        <div id="transfer-panel" style="display:none; margin-top: 20px; background: #fff; padding: 20px; border-radius: 24px;">
-            <div style="font-weight: bold; margin-bottom: 15px;">Новый перевод</div>
-            <input type="text" id="target-id" class="input-alfa" placeholder="ID получателя">
-            <input type="number" id="amount" class="input-alfa" placeholder="Сумма $">
-            <button class="main-btn" onclick="send()">Отправить деньги</button>
-        </div>
+<div id="transfer-modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0">Перевод по ID</h3>
+        <input type="text" id="to-id" placeholder="ID получателя">
+        <input type="number" id="to-amt" placeholder="Сумма ₽">
+        <button class="btn-red" style="width:100%" onclick="makeTransfer()">Отправить</button>
+        <button onclick="hideModal()" style="width:100%; background:none; border:none; margin-top:10px; color:var(--gray)">Отмена</button>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, set, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, runTransaction, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDOmPzdDi6n6vICcDMoAytqVQ9nr9ZLERQ",
@@ -227,62 +107,77 @@
     const db = getDatabase(app);
     const provider = new GoogleAuthProvider();
 
-    let user = null;
+    let me = null;
 
     window.login = () => signInWithPopup(auth, provider);
+    window.showModal = () => document.getElementById('transfer-modal').style.display = 'flex';
+    window.hideModal = () => document.getElementById('transfer-modal').style.display = 'none';
+    window.copyId = () => { navigator.clipboard.writeText(me.uid); alert("ID скопирован"); };
 
-    onAuthStateChanged(auth, (u) => {
-        if (u) {
-            user = u;
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('main-ui').style.display = 'block';
-            document.getElementById('u-pic').src = u.photoURL;
-            document.getElementById('u-name').innerText = u.displayName.split(' ')[0];
-            document.getElementById('u-uid').innerText = 'ID: ' + u.uid;
-            
-            // Баланс
-            onValue(ref(db, `eco/users/${u.uid}/bal`), (s) => {
-                document.getElementById('balance').innerText = (s.val() || 0).toFixed(2);
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            me = user;
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('u-img').src = user.photoURL;
+            document.getElementById('u-name').innerText = user.displayName;
+            document.getElementById('u-uid').innerText = 'ID: ' + user.uid;
+
+            // Следим за балансом
+            onValue(ref(db, `bank_pro/users/${user.uid}/balance`), (s) => {
+                document.getElementById('u-bal').innerText = (s.val() || 0).toLocaleString();
             });
-            // Резерв
-            onValue(ref(db, 'eco/system_pool'), (s) => {
-                document.getElementById('pool').innerText = (s.val() || 0).toFixed(2) + ' $';
+
+            // Следим за историей (у каждой транзакции будет свой уникальный ID)
+            onValue(ref(db, `bank_pro/users/${user.uid}/ledger`), (s) => {
+                const list = document.getElementById('history-list');
+                list.innerHTML = '';
+                const data = s.val();
+                if (data) {
+                    Object.keys(data).reverse().forEach(id => {
+                        const t = data[id];
+                        list.innerHTML += `
+                            <div class="t-item">
+                                <div class="t-info">
+                                    <div>${t.type === 'in' ? 'Входящий перевод' : 'Перевод другу'}</div>
+                                    <span>Билет №${id.substring(1, 10).toUpperCase()}</span>
+                                </div>
+                                <div class="t-amount ${t.type === 'in' ? 'plus' : 'minus'}">
+                                    ${t.type === 'in' ? '+' : '-'}${t.amount} ₽
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
             });
         }
     });
 
-    // Система печати денег в Global Pool
-    setInterval(() => {
-        runTransaction(ref(db, 'eco/system_pool'), (c) => (c || 0) + 0.15);
-    }, 1000);
+    window.makeTransfer = async () => {
+        const to = document.getElementById('to-id').value;
+        const amt = parseFloat(document.getElementById('to-amt').value);
+        if (!to || amt <= 0) return;
 
-    window.loot = () => {
-        runTransaction(ref(db, 'eco/system_pool'), (pool) => {
-            if (pool >= 1) {
-                runTransaction(ref(db, `eco/users/${user.uid}/bal`), (b) => (b || 0) + 1);
-                return pool - 1;
-            }
-        });
-    };
-
-    window.openTransfer = () => {
-        const p = document.getElementById('transfer-panel');
-        p.style.display = p.style.display === 'none' ? 'block' : 'none';
-    };
-
-    window.send = async () => {
-        const to = document.getElementById('target-id').value;
-        const amt = parseFloat(document.getElementById('amount').value);
-        if(!to || !amt) return;
-
-        const res = await runTransaction(ref(db, `eco/users/${user.uid}/bal`), (b) => {
-            if (b >= amt) return b - amt;
+        // Транзакция: списываем у себя
+        const res = await runTransaction(ref(db, `bank_pro/users/${me.uid}/balance`), (cur) => {
+            if (cur >= amt) return cur - amt;
         });
 
         if (res.committed) {
-            runTransaction(ref(db, `eco/users/${to}/bal`), (b) => (b || 0) + amt);
-            alert("Готово!");
-            document.getElementById('transfer-panel').style.display = 'none';
+            // Уникальный ID транзакции (как серийник на купюре)
+            const tId = push(ref(db, 'bank_pro/ledger')).key;
+
+            // Добавляем получателю
+            runTransaction(ref(db, `bank_pro/users/${to}/balance`), (cur) => (cur || 0) + amt);
+
+            // Пишем в историю обоим
+            set(ref(db, `bank_pro/users/${me.uid}/ledger/${tId}`), { amount: amt, type: 'out', time: serverTimestamp() });
+            set(ref(db, `bank_pro/users/${to}/ledger/${tId}`), { amount: amt, type: 'in', time: serverTimestamp() });
+
+            hideModal();
+            alert("Перевод успешно отправлен!");
+        } else {
+            alert("Недостаточно средств");
         }
     };
 </script>
