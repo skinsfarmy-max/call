@@ -1,73 +1,218 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School EcoSystem | Auth</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>Альфа-Школа</title>
     <style>
-        :root { --bg: #0d1117; --card: #161b22; --accent: #58a6ff; --money: #39d353; }
-        body { background: var(--bg); color: white; font-family: -apple-system, sans-serif; margin: 0; display: flex; justify-content: center; }
-        .app { width: 100%; max-width: 400px; padding: 20px; display: none; }
-        
+        :root {
+            --alfa-red: #ef3124;
+            --alfa-black: #030306;
+            --alfa-gray: #f2f3f5;
+            --alfa-text-secondary: #0404138c;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--alfa-gray);
+            color: var(--alfa-black);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
         /* Экран входа */
-        #auth-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
-        
-        /* Главная панель */
-        .stat-card { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #30363d; margin-bottom: 15px; text-align: center; }
-        .balance { font-size: 40px; font-weight: bold; color: var(--money); margin: 10px 0; }
-        .system-pool { font-size: 14px; color: #8b949e; }
+        #login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #fff;
+        }
 
-        button { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-google { background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-loot { background: var(--money); color: black; font-size: 18px; margin-top: 10px; }
-        .btn-loot:disabled { background: #234d32; color: #8b949e; cursor: not-allowed; }
+        .alfa-logo {
+            color: var(--alfa-red);
+            font-size: 40px;
+            font-weight: 900;
+            margin-bottom: 40px;
+            letter-spacing: -2px;
+        }
 
-        .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 14px; }
-        .user-info img { width: 35px; height: 35px; border-radius: 50%; }
+        /* Главный экран */
+        #main-ui { display: none; }
 
-        .input-group { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid #30363d; margin-top: 20px; }
-        input { width: 100%; background: #0d1117; border: 1px solid #30363d; color: white; padding: 10px; border-radius: 8px; margin: 10px 0; box-sizing: border-box; }
+        .header {
+            background: #fff;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #eee;
+        }
+
+        .container {
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Карточка счета (как в Альфе) */
+        .account-card {
+            background: #fff;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .account-label {
+            font-size: 14px;
+            color: var(--alfa-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .balance-row {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .currency { color: var(--alfa-text-secondary); font-weight: 400; }
+
+        /* Плитки действий */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .action-tile {
+            background: #fff;
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .action-tile:active { transform: scale(0.97); }
+
+        .icon-box {
+            width: 32px;
+            height: 32px;
+            background: var(--alfa-gray);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Глобальный инфляционный блок */
+        .system-banner {
+            background: var(--alfa-red);
+            color: #fff;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button.main-btn {
+            background: var(--alfa-red);
+            color: #fff;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .input-alfa {
+            width: 100%;
+            padding: 14px;
+            background: var(--alfa-gray);
+            border: none;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen">
-        <h1 style="font-size: 32px; letter-spacing: -1px;">SCHOOL<span style="color:var(--accent)">ECO</span></h1>
-        <button class="btn-google" onclick="signIn()">
-            <img src="https://www.google.com/favicon.ico" width="18"> Войти через Google
-        </button>
+<div id="login-screen">
+    <div class="alfa-logo">A-Eco</div>
+    <button onclick="login()" style="background:var(--alfa-red); color:white; border:none; padding:15px 30px; border-radius:12px; font-weight:bold; cursor:pointer;">
+        Войти через Google
+    </button>
+</div>
+
+<div id="main-ui">
+    <div class="header">
+        <img id="u-pic" class="avatar" src="">
+        <div>
+            <div style="font-size: 12px; color: var(--alfa-text-secondary);">Добрый день,</div>
+            <div id="u-name" style="font-weight: 600;">Пользователь</div>
+        </div>
+        <button onclick="location.reload()" style="margin-left: auto; background: none; border: none; color: var(--alfa-red);">Выйти</button>
     </div>
 
-    <div class="app" id="app-ui">
-        <div class="user-info">
-            <img id="user-pic" src="">
-            <span id="user-name">Загрузка...</span>
-            <button onclick="signOutUser()" style="width: auto; padding: 5px 10px; margin-left: auto; font-size: 10px; background: #30363d;">Выйти</button>
+    <div class="container">
+        <div class="system-banner">
+            <div>
+                <div style="font-size: 12px; opacity: 0.8;">Доступно для выплаты:</div>
+                <div id="pool" style="font-size: 20px; font-weight: bold;">0.00 $</div>
+            </div>
+            <button onclick="loot()" style="background: #fff; color: var(--alfa-red); border: none; padding: 8px 16px; border-radius: 10px; font-weight: bold;">Лутать</button>
         </div>
 
-        <div class="stat-card">
-            <div class="system-pool">Глобальный резерв: <span id="pool-val">0.00</span> $</div>
-            <div class="balance" id="user-balance">0.00 $</div>
-            <div style="font-size: 12px; color: #8b949e;">Твой текущий баланс</div>
+        <div class="account-card">
+            <div class="account-label">Текущий счет · School Pay</div>
+            <div class="balance-row"><span id="balance">0.00</span> <span class="currency">$</span></div>
+            <div id="u-uid" style="font-size: 10px; color: var(--alfa-text-secondary); margin-top: 10px;">ID: ...</div>
         </div>
 
-        <button class="btn-loot" id="loot-btn" onclick="loot()">ЛУТАТЬ ВЫПЛАТУ (+5$)</button>
-
-        <div class="input-group">
-            <div style="font-size: 12px; color: #8b949e;">БЫСТРЫЙ ПЕРЕВОД</div>
-            <input type="text" id="target-uid" placeholder="UID получателя">
-            <input type="number" id="send-amount" placeholder="Сумма">
-            <button onclick="transfer()" style="background: var(--accent); color: white;">ОТПРАВИТЬ</button>
+        <div class="actions-grid">
+            <div class="action-tile" onclick="openTransfer()">
+                <div class="icon-box">💸</div>
+                <div style="font-weight: 600; font-size: 14px;">Перевод</div>
+            </div>
+            <div class="action-tile">
+                <div class="icon-box">📊</div>
+                <div style="font-weight: 600; font-size: 14px;">История</div>
+            </div>
         </div>
-        
-        <div style="margin-top: 15px; font-size: 10px; color: #484f58; word-break: break-all;">
-            Твой ID для получения: <br><b id="my-uid-display"></b>
+
+        <div id="transfer-panel" style="display:none; margin-top: 20px; background: #fff; padding: 20px; border-radius: 24px;">
+            <div style="font-weight: bold; margin-bottom: 15px;">Новый перевод</div>
+            <input type="text" id="target-id" class="input-alfa" placeholder="ID получателя">
+            <input type="number" id="amount" class="input-alfa" placeholder="Сумма $">
+            <button class="main-btn" onclick="send()">Отправить деньги</button>
         </div>
     </div>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getDatabase, ref, set, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
@@ -82,72 +227,62 @@
     const db = getDatabase(app);
     const provider = new GoogleAuthProvider();
 
-    let currentUser = null;
+    let user = null;
 
-    // Авторизация
-    window.signIn = () => signInWithPopup(auth, provider);
-    window.signOutUser = () => signOut(auth).then(() => location.reload());
+    window.login = () => signInWithPopup(auth, provider);
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = user;
-            showUI(user);
-        } else {
-            document.getElementById('auth-screen').style.display = 'flex';
+    onAuthStateChanged(auth, (u) => {
+        if (u) {
+            user = u;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'block';
+            document.getElementById('u-pic').src = u.photoURL;
+            document.getElementById('u-name').innerText = u.displayName.split(' ')[0];
+            document.getElementById('u-uid').innerText = 'ID: ' + u.uid;
+            
+            // Баланс
+            onValue(ref(db, `eco/users/${u.uid}/bal`), (s) => {
+                document.getElementById('balance').innerText = (s.val() || 0).toFixed(2);
+            });
+            // Резерв
+            onValue(ref(db, 'eco/system_pool'), (s) => {
+                document.getElementById('pool').innerText = (s.val() || 0).toFixed(2) + ' $';
+            });
         }
     });
 
-    function showUI(user) {
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('app-ui').style.display = 'block';
-        document.getElementById('user-pic').src = user.photoURL;
-        document.getElementById('user-name').innerText = user.displayName;
-        document.getElementById('my-uid-display').innerText = user.uid;
-
-        // Подписка на баланс
-        onValue(ref(db, `eco/users/${user.uid}/bal`), (s) => {
-            document.getElementById('user-balance').innerText = (s.val() || 0).toFixed(2) + ' $';
-        });
-
-        // Подписка на глобальный резерв
-        onValue(ref(db, 'eco/system_pool'), (s) => {
-            const pool = s.val() || 0;
-            document.getElementById('pool-val').innerText = pool.toFixed(2);
-            document.getElementById('loot-btn').disabled = pool < 5;
-        });
-    }
-
-    // Логика печати денег (серверная имитация)
+    // Система печати денег в Global Pool
     setInterval(() => {
-        runTransaction(ref(db, 'eco/system_pool'), (c) => (c || 0) + 0.50);
-    }, 2000);
+        runTransaction(ref(db, 'eco/system_pool'), (c) => (c || 0) + 0.15);
+    }, 1000);
 
-    // Функция лутания
     window.loot = () => {
         runTransaction(ref(db, 'eco/system_pool'), (pool) => {
-            if (pool >= 5) {
-                runTransaction(ref(db, `eco/users/${currentUser.uid}/bal`), (b) => (b || 0) + 5);
-                return pool - 5;
+            if (pool >= 1) {
+                runTransaction(ref(db, `eco/users/${user.uid}/bal`), (b) => (b || 0) + 1);
+                return pool - 1;
             }
         });
     };
 
-    // Функция перевода
-    window.transfer = async () => {
-        const to = document.getElementById('target-uid').value;
-        const amt = parseFloat(document.getElementById('send-amount').value);
-        if (!to || amt <= 0) return;
+    window.openTransfer = () => {
+        const p = document.getElementById('transfer-panel');
+        p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    };
 
-        const myRef = ref(db, `eco/users/${currentUser.uid}/bal`);
-        const result = await runTransaction(myRef, (bal) => {
-            if (bal >= amt) return bal - amt;
+    window.send = async () => {
+        const to = document.getElementById('target-id').value;
+        const amt = parseFloat(document.getElementById('amount').value);
+        if(!to || !amt) return;
+
+        const res = await runTransaction(ref(db, `eco/users/${user.uid}/bal`), (b) => {
+            if (b >= amt) return b - amt;
         });
 
-        if (result.committed) {
+        if (res.committed) {
             runTransaction(ref(db, `eco/users/${to}/bal`), (b) => (b || 0) + amt);
-            alert("Деньги отправлены!");
-        } else {
-            alert("Недостаточно средств!");
+            alert("Готово!");
+            document.getElementById('transfer-panel').style.display = 'none';
         }
     };
 </script>
