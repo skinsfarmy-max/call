@@ -2,47 +2,76 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Map Sync Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity Bank | Inflation Sim</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; background: #0f172a; color: white; font-family: sans-serif; overflow: hidden; }
-        #setup { position: fixed; inset: 0; z-index: 100; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; }
-        input { padding: 15px; border-radius: 12px; border: 1px solid #334155; background: #1e293b; color: white; width: 250px; text-align: center; }
-        button { padding: 15px 30px; border-radius: 12px; border: none; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; }
+        :root { --bg: #0a0a0c; --gold: #ffd700; --red: #ff4d4d; --green: #00ff88; }
+        body { background: var(--bg); color: white; font-family: 'Orbitron', sans-serif; margin: 0; display: flex; justify-content: center; }
+        .app { width: 100%; max-width: 450px; padding: 20px; }
+
+        /* Табло инфляции */
+        .market-header { 
+            background: #16161a; padding: 20px; border-radius: 20px; 
+            border-bottom: 3px solid var(--red); margin-bottom: 20px; text-align: center;
+        }
+        .inflation-rate { font-size: 24px; color: var(--red); font-weight: bold; }
+
+        /* Карта счета */
+        .card { 
+            background: linear-gradient(135deg, #1a1c22 0%, #000 100%);
+            padding: 30px; border-radius: 25px; border: 1px solid #333;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5); margin-bottom: 20px;
+        }
+        .money-val { font-size: 48px; color: var(--green); text-shadow: 0 0 15px rgba(0,255,136,0.3); }
+
+        /* Глобальный пул денег */
+        .pool-info { font-size: 14px; color: #888; margin-bottom: 10px; }
+        .pool-val { color: var(--gold); font-weight: bold; }
+
+        /* Кнопки */
+        .btn-loot { 
+            width: 100%; padding: 20px; border-radius: 15px; border: none;
+            background: var(--green); color: black; font-size: 18px; font-weight: 900;
+            cursor: pointer; transform: scale(1); transition: 0.1s;
+        }
+        .btn-loot:active { transform: scale(0.95); }
         
-        #map-wrapper { display: none; width: 100%; height: 100%; position: relative; }
-        iframe { width: 100%; height: 100%; border: none; }
-        
-        /* Слой для отлова кликов */
-        #click-layer { position: absolute; inset: 0; z-index: 5; background: transparent; cursor: crosshair; display: none; }
-        
-        .controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(30, 41, 59, 0.9); padding: 10px; border-radius: 15px; display: flex; gap: 10px; }
-        .hint { position: absolute; top: 10px; width: 100%; text-align: center; z-index: 10; pointer-events: none; text-shadow: 0 2px 4px black; }
+        .transfer-box { 
+            background: #16161a; padding: 15px; border-radius: 15px; margin-top: 20px;
+        }
+        input { width: 100%; background: #000; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; margin: 5px 0; }
     </style>
 </head>
 <body>
 
-<div id="setup">
-    <h1>MAP SYNC</h1>
-    <button onclick="start(true)">СОЗДАТЬ</button>
-    <input type="number" id="rid" placeholder="ID (4 цифры)">
-    <button onclick="start(false)" style="background: #10b981;">ВОЙТИ</button>
-</div>
+<div class="app">
+    <div class="market-header">
+        <div style="font-size: 12px; opacity: 0.6;">УРОВЕНЬ ИНФЛЯЦИИ</div>
+        <div class="inflation-rate" id="inflation-pct">0.00%</div>
+        <div style="font-size: 10px; color: #555;">(зависит от общей массы денег в системе)</div>
+    </div>
 
-<div id="map-wrapper">
-    <div class="hint">Двойной клик по экрану, чтобы сменить место для всех</div>
-    <div id="click-layer" ondblclick="changePlace()"></div>
-    <iframe id="map"></iframe>
-    <div class="controls">
-        <button onclick="toggleMode()" id="mode-btn">РЕЖИМ: ОБЗОР</button>
-        <button onclick="location.reload()" style="background:#ef4444">ВЫХОД</button>
+    <div class="card">
+        <div class="pool-info">В системе напечатано: <span class="pool-val" id="global-pool">0.00</span> $</div>
+        <div style="font-size: 12px; color: #888;">Ваш баланс:</div>
+        <div class="money-val" id="user-balance">0.00</div>
+    </div>
+
+    <button class="btn-loot" onclick="lootMoney()">ЛУТАТЬ ВЫПЛАТУ 💸</button>
+
+    <div class="transfer-box">
+        <div style="font-size: 12px; margin-bottom: 10px;">ПЕРЕВОД ДРУГУ</div>
+        <input type="text" id="target-id" placeholder="UID получателя">
+        <input type="number" id="amount" placeholder="Сумма">
+        <button onclick="sendMoney()" style="width:100%; background:#3b82f6; color:white; border:none; padding:10px; border-radius:8px; margin-top:5px;">Отправить</button>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // Используем твой старый конфиг от заметок
     const firebaseConfig = {
         apiKey: "AIzaSyDOmPzdDi6n6vICcDMoAytqVQ9nr9ZLERQ",
         authDomain: "notes-f9e8b.firebaseapp.com",
@@ -52,32 +81,71 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let roomId, isNavMode = false;
 
-    window.start = (create) => {
-        roomId = create ? Math.floor(1000 + Math.random() * 9000).toString() : document.getElementById('rid').value;
-        if(!roomId) return alert("Введите ID");
+    // В учебных целях генерируем ID сессии (имитация юзера без логина для скорости)
+    const myUid = localStorage.getItem('eco_uid') || 'u' + Math.floor(Math.random()*10000);
+    localStorage.setItem('eco_uid', myUid);
+    alert("Твой ID для получения денег: " + myUid);
+
+    // 1. СИСТЕМА ПЕЧАТИ ДЕНЕГ (работает только у "Мастера", но мы сделаем общую)
+    // Каждую секунду увеличиваем глобальный пул
+    setInterval(() => {
+        runTransaction(ref(db, 'eco_sim/global_pool'), (current) => (current || 0) + 1.50);
+    }, 1000);
+
+    // 2. МОНИТОРИНГ ЭКОНОМИКИ
+    onValue(ref(db, 'eco_sim'), (snap) => {
+        const data = snap.val() || {};
+        const pool = data.global_pool || 0;
+        const totalInHands = data.total_money_in_circulation || 1;
+
+        document.getElementById('global-pool').innerText = pool.toFixed(2);
         
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('map-wrapper').style.display = 'block';
+        // Расчет инфляции (пример: чем больше денег у людей относительно пула, тем выше инфляция)
+        const inflation = (totalInHands / 1000) * 100;
+        document.getElementById('inflation-pct').innerText = inflation.toFixed(2) + '%';
+    });
 
-        if(create) set(ref(db, `walk/${roomId}`), { p: "London" });
+    // 3. ТВОЙ БАЛАНС
+    onValue(ref(db, `eco_sim/users/${myUid}/balance`), (snap) => {
+        document.getElementById('user-balance').innerText = (snap.val() || 0).toFixed(2);
+    });
 
-        onValue(ref(db, `walk/${roomId}`), (s) => {
-            if(s.exists()) document.getElementById('map').src = `https://maps.google.com/maps?q=${encodeURIComponent(s.val().p)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+    // 4. ЛУТИНГ (Забрать деньги из системы)
+    window.lootMoney = () => {
+        const amountToLoot = 5.00; // Сколько юзер хочет забрать за раз
+
+        // Проверяем, есть ли деньги в пуле
+        runTransaction(ref(db, 'eco_sim/global_pool'), (pool) => {
+            if (pool >= amountToLoot) {
+                // Если в пуле есть деньги, начисляем юзеру
+                runTransaction(ref(db, `eco_sim/users/${myUid}/balance`), (bal) => (bal || 0) + amountToLoot);
+                // Увеличиваем общую массу денег (для инфляции)
+                runTransaction(ref(db, 'eco_sim/total_money_in_circulation'), (total) => (total || 0) + amountToLoot);
+                return pool - amountToLoot;
+            }
+            return; // Если пул пуст, ничего не происходит
         });
     };
 
-    window.toggleMode = () => {
-        isNavMode = !isNavMode;
-        document.getElementById('click-layer').style.display = isNavMode ? 'block' : 'none';
-        document.getElementById('mode-btn').innerText = isNavMode ? 'РЕЖИМ: КЛИК' : 'РЕЖИМ: ОБЗОР';
-        document.getElementById('mode-btn').style.background = isNavMode ? '#f59e0b' : '#3b82f6';
-    };
+    // 5. ПЕРЕВОД
+    window.sendMoney = async () => {
+        const target = document.getElementById('target-id').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+        if(!target || amount <= 0) return;
 
-    window.changePlace = () => {
-        const p = prompt("Куда летим?");
-        if(p) set(ref(db, `walk/${roomId}`), { p: p });
+        const myBalRef = ref(db, `eco_sim/users/${myUid}/balance`);
+        const res = await runTransaction(myBalRef, (cur) => {
+            if (cur >= amount) return cur - amount;
+            return;
+        });
+
+        if(res.committed) {
+            runTransaction(ref(db, `eco_sim/users/${target}/balance`), (cur) => (cur || 0) + amount);
+            alert("Перевод выполнен!");
+        } else {
+            alert("Мало бабок!");
+        }
     };
 </script>
 </body>
